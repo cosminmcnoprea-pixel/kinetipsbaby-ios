@@ -8,7 +8,12 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Binding var selectedTab: Int
     let categories = BabyExerciseDataGenerator.getAllCategories()
+    @AppStorage("baby_name") private var babyName: String = ""
+    @AppStorage("baby_age_months") private var babyAge: Int = 0
+    @AppStorage("baby_age_set") private var babyAgeSet: Bool = false
+    @State private var showingProfileRequiredAlert = false
     
     var body: some View {
         NavigationView {
@@ -35,8 +40,17 @@ struct HomeView: View {
                     
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         ForEach(categories) { category in
-                            NavigationLink(destination: ProgramListView(category: category)) {
-                                CategoryCard(category: category)
+                            if isProfileComplete {
+                                NavigationLink(destination: ProgramListView(category: category)) {
+                                    CategoryCard(category: category, isRecommended: isRecommended(category))
+                                }
+                            } else {
+                                Button {
+                                    showingProfileRequiredAlert = true
+                                } label: {
+                                    CategoryCard(category: category, isRecommended: isRecommended(category))
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
@@ -48,11 +62,29 @@ struct HomeView: View {
             .navigationTitle("Baby Programs")
             .navigationBarTitleDisplayModeInline()
         }
+        .alert("Complete Baby Profile", isPresented: $showingProfileRequiredAlert) {
+            Button("Go to Profile") {
+                selectedTab = 3
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Please set your baby's name and age to get age-appropriate exercise recommendations.")
+        }
+    }
+
+    private var isProfileComplete: Bool {
+        return !babyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && babyAgeSet
+    }
+
+    private func isRecommended(_ category: BabyCategory) -> Bool {
+        guard babyAgeSet else { return false }
+        return babyAge >= category.ageRangeMin && babyAge < category.ageRangeMax
     }
 }
 
 struct CategoryCard: View {
     let category: BabyCategory
+    let isRecommended: Bool
     
     var body: some View {
         VStack(spacing: 12) {
@@ -69,6 +101,23 @@ struct CategoryCard: View {
             Text(category.ageRangeText)
                 .font(.caption2)
                 .foregroundColor(.secondary)
+
+            if isRecommended {
+                HStack(spacing: 6) {
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                    Text("Recommended")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.blue)
+                )
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
