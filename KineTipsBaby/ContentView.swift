@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             TabView(selection: $selectedTab) {
-                HomeView()
+                HomeView(selectedTab: $selectedTab)
                     .tabItem {
                         Label("Programs", systemImage: "house.fill")
                     }
