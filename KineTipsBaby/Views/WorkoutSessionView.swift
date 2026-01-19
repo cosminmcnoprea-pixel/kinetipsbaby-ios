@@ -292,132 +292,107 @@ struct ExerciseWorkoutView: View {
     let isPaused: Bool
     let onPause: () -> Void
     let onComplete: () -> Void
+    @State private var scrollOffset: CGFloat = 0
+
+    private var controlsBackgroundOpacity: Double {
+        let scrolled = max(0, Double(-scrollOffset))
+        let t = min(max(scrolled / 140.0, 0.0), 1.0)
+        return 1.0 - (0.8 * t)
+    }
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Exercise Name
-            Text(exercise.exerciseName)
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal)
-            
-            // Video Placeholder
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.1))
-                    .frame(height: 200)
-                
-                if let videoURL = exercise.videoURL {
-                    Text("Video: \(videoURL)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 50))
+        ExerciseContentView(exercise: exercise, scrollOffset: $scrollOffset)
+            .safeAreaInset(edge: .bottom) {
+                if exercise.isTimedExercise {
+                    VStack(spacing: 12) {
+                        Text("\(timeRemaining)s")
+                            .font(.system(size: 48, weight: .bold))
                             .foregroundColor(.blue)
                         
-                        Text("Video Coming Soon")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .padding(.horizontal)
-            
-            // Quick Instructions
-            Text(exercise.exerciseDescription)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal)
-            
-            Spacer()
-            
-            // Timer/Reps Section
-            if exercise.isTimedExercise {
-                VStack(spacing: 12) {
-                    Text("\(timeRemaining)s")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.blue)
-                    
-                    HStack(spacing: 12) {
-                        Button(action: onPause) {
-                            HStack(spacing: 8) {
-                                Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                                Text(isPaused ? "Resume" : "Pause")
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(isPaused ? Color.green : Color.orange)
-                            )
-                        }
-                        
-                        Button(action: onComplete) {
-                            Text("Skip")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                                .frame(width: 100, height: 50)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.blue, lineWidth: 2)
-                                )
-                        }
-                    }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.blue.opacity(0.1))
-                )
-                .padding(.horizontal)
-            } else {
-                // Rep-based exercise
-                VStack(spacing: 12) {
-                    Text("\(exercise.repetitions) reps")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.blue)
-                    
-                    HStack(spacing: 12) {
-                        Button(action: onComplete) {
-                            Text("Done")
+                        HStack(spacing: 12) {
+                            Button(action: onPause) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                                    Text(isPaused ? "Resume" : "Pause")
+                                }
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.green)
+                                        .fill(isPaused ? Color.green : Color.orange)
                                 )
-                        }
-                        
-                        Button(action: onComplete) {
-                            Text("Skip")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                                .frame(width: 100, height: 50)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.blue, lineWidth: 2)
-                                )
+                            }
+                            
+                            Button(action: onComplete) {
+                                Text("Skip")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                                    .frame(width: 100, height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.blue, lineWidth: 2)
+                                    )
+                            }
                         }
                     }
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.ultraThinMaterial)
+                            .opacity(controlsBackgroundOpacity)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                } else {
+                    VStack(spacing: 12) {
+                        Text("\(exercise.repetitions) reps")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.blue)
+                        
+                        HStack(spacing: 12) {
+                            Button(action: onComplete) {
+                                Text("Done")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.green)
+                                    )
+                            }
+                            
+                            Button(action: onComplete) {
+                                Text("Skip")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                                    .frame(width: 100, height: 50)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.blue, lineWidth: 2)
+                                    )
+                            }
+                        }
+                    }
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.ultraThinMaterial)
+                            .opacity(controlsBackgroundOpacity)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.blue.opacity(0.1))
-                )
-                .padding(.horizontal)
             }
-        }
-        .padding(.bottom, 20)
     }
 }
